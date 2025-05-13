@@ -1,6 +1,8 @@
-import { httpServer } from "./src/http_server/index.ts";
+import { httpServer } from "./src/http_server/index";
+import { wsServer } from './src/ws_server/index';
 
-const HTTP_PORT = 8181;
+const HTTP_PORT = 3000;
 
 console.log(`Start static http server on the ${HTTP_PORT} port!`);
+wsServer.attachTo(httpServer);
 httpServer.listen(HTTP_PORT);
