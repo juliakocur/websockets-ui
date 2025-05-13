@@ -1,5 +1,6 @@
 import { WebSocket } from 'ws';
 import { player } from './player';
+import { roomManager } from '../model/room/room';
 
 export const handleMessage = (ws: WebSocket, message: string) => {
   let parsed;
@@ -21,6 +22,15 @@ export const handleMessage = (ws: WebSocket, message: string) => {
     ws.send(JSON.stringify({
       type: 'reg',
       data: result,
+      id: 0,
+    }));
+  }
+
+  if (parsed.type === 'create_room') {
+    const roomNum = roomManager.createRoom(ws);
+    ws.send(JSON.stringify({
+      type: 'create_room',
+      data: { roomNum },
       id: 0,
     }));
   }
