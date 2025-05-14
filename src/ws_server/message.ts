@@ -40,6 +40,12 @@ export const handleMessage = (ws: WebSocket, message: string) => {
       data: JSON.stringify(result),
       id,
     }));
+    const rooms = roomManager.getAvailableRooms();
+    ws.send(JSON.stringify({
+      type: 'update_room',
+      data: JSON.stringify(rooms),
+      id,
+    }));
     return;
   }
 
@@ -70,6 +76,16 @@ export const handleMessage = (ws: WebSocket, message: string) => {
         }));
       });
     }
+    return;
+  }
+
+  if (type === 'get_rooms') {
+    const rooms = roomManager.getAvailableRooms();
+    ws.send(JSON.stringify({
+      type: 'update_room',
+      data: JSON.stringify(rooms),
+      id,
+    }));
     return;
   }
 

@@ -26,6 +26,9 @@ class RoomManager {
     if (!room) return 'Room not found';
     if (room.players.length === 2) return 'Room already full';
 
+    const userInRoom = room.players.some(p => p.ws === ws);
+    if (userInRoom) return 'You are already in this room';
+
     const playerId = this.nextPlayerId++;
     const newPlayer: IRoomPlayer = {
       name: 'Player 2',
@@ -94,6 +97,15 @@ class RoomManager {
         id: 0,
       }));
     });
+  }
+
+  getAvailableRooms() {
+    return this.rooms
+      .filter(r => r.players.length < 2)
+      .map(r => ({
+        roomId: r.roomNum,
+        roomUsers: r.players.map(p => ({ name: p.name }))
+      }));
   }
 
   broadcastRoomsUpdate() {
