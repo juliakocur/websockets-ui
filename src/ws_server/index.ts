@@ -11,9 +11,8 @@ wss.on('connection', (ws: WebSocket) => {
 
   ws.on('message', (message) => {
     try {
-      const parsed = JSON.parse(message.toString());
-      console.log('Received message:', parsed);
-      handleMessage(ws, parsed);
+      console.log('Received raw message:', message.toString());
+      handleMessage(ws, message.toString());
     } catch (err) {
       console.error('Error', err);
       ws.send(JSON.stringify({

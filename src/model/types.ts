@@ -1,10 +1,19 @@
 import { WebSocket } from 'ws';
 
 export interface IPlayer {
-    name: string;
-    password: string;
-    wins: number;
-    index: number;
+  name: string;
+  password: string;
+  wins: number;
+  index: number;
+  ws?: WebSocket;
+}
+
+export interface IRoomPlayer {
+  name: string;
+  password: string;
+  wins: number;
+  index: number;
+  ws: WebSocket;
 }
 
 export interface IRoom {
