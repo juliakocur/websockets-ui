@@ -44,7 +44,7 @@ class RoomManager {
     return roomId;
   }
 
-  addShips(gameId: number, ships: [], playerIndex: number): string | void {
+  addShips(gameId: number, ships: IShip[], playerIndex: number): string | void {
     const room = this.rooms.find((r) => r.roomNum === gameId);
     if (!room) return 'Room not found';
 

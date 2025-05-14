@@ -14,12 +14,12 @@ export interface IRoomPlayer {
   wins: number;
   index: number;
   ws: WebSocket;
-  ships: [];
+  ships: IShip[];
 }
 
 export interface IRoom {
   roomNum: string | number;
-  players: { name: string; index: string | number; ws: WebSocket;  ships: [] }[];
+  players: { name: string; index: string | number; ws: WebSocket;  ships: IShip[]; }[];
 }
 
 export interface IShip {
