@@ -14,9 +14,20 @@ export interface IRoomPlayer {
   wins: number;
   index: number;
   ws: WebSocket;
+  ships: [];
 }
 
 export interface IRoom {
   roomNum: string | number;
-  players: { name: string; index: string | number; ws: WebSocket }[];
+  players: { name: string; index: string | number; ws: WebSocket;  ships: [] }[];
+}
+
+export interface IShip {
+  position: {
+    x: number;
+    y: number;
+  };
+  direction: boolean;
+  length: number;
+  type: 'small' | 'medium' | 'large' | 'huge';
 }

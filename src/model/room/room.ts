@@ -1,5 +1,5 @@
 import { WebSocket } from 'ws';
-import { IRoom, IRoomPlayer } from '../types';
+import { IRoom, IRoomPlayer, IShip } from '../types';
 
 class RoomManager {
   private rooms: IRoom[] = [];
@@ -13,7 +13,7 @@ class RoomManager {
     const room: IRoom = {
       roomNum,
       players: [
-        { name: 'Player 1', index: playerId, ws },
+        { name: 'Player 1', index: playerId, ws, ships: [] },
       ],
     };
     this.rooms.push(room);
@@ -32,7 +32,8 @@ class RoomManager {
       password: '',
       wins: 0,
       index: playerId,
-      ws
+      ws,
+      ships: [],
     };
     room.players.push(newPlayer);
     this.broadcastRoomsUpdate();
@@ -41,6 +42,58 @@ class RoomManager {
       return { gameId, players: room.players };
     }
     return roomId;
+  }
+
+  addShips(gameId: number, ships: [], playerIndex: number): string | void {
+    const room = this.rooms.find((r) => r.roomNum === gameId);
+    if (!room) return 'Room not found';
+
+    if (playerIndex < 0 || playerIndex >= room.players.length) {
+      return 'Invalid player index';
+    }
+  
+    room.players[playerIndex].ships = ships;
+  
+    const allReady = room.players.every((p) => p.ships.length > 0);
+    if (allReady) {
+      this.startGame(room);
+    }
+  }
+
+  startGame(room: IRoom) {
+    const currentPlayerIndex = room.players[0].index;
+    room.players.forEach((player) => {
+      player.ws.send(JSON.stringify({
+        type: 'start_game',
+        data: JSON.stringify({
+          ships: player.ships,
+          currentPlayerIndex,
+        }),
+        id: 0,
+      }));
+    });
+  
+    room.players.forEach((player) => {
+      player.ws.send(JSON.stringify({
+        type: 'turn',
+        data: JSON.stringify({
+          currentPlayer: currentPlayerIndex,
+        }),
+        id: 0,
+      }));
+    });
+  }
+
+  sendTurn(room: IRoom, currentPlayerIndex: number) {
+    room.players.forEach(player => {
+      player.ws.send(JSON.stringify({
+        type: 'turn',
+        data: JSON.stringify({
+          currentPlayer: currentPlayerIndex,
+        }),
+        id: 0,
+      }));
+    });
   }
 
   broadcastRoomsUpdate() {

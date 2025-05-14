@@ -73,6 +73,12 @@ export const handleMessage = (ws: WebSocket, message: string) => {
     return;
   }
 
+  if (type === 'add_ships') { 
+    const { gameId, ships, indexPlayer } = data;
+    roomManager.addShips(gameId, ships as [], indexPlayer);
+    return;
+  }
+
   if (type === 'single_play') {
     ws.send(JSON.stringify({
       type: 'error',
