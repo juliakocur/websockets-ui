@@ -1,8 +1,15 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import { handleMessage } from './message';
-import * as http from 'http';
+import { httpServer } from "../http_server/index";
 
-export const wss = new WebSocketServer({ noServer: true });
+export const HTTP_PORT = 8181;
+export const WS_PORT = 3000;
+
+httpServer.listen(HTTP_PORT, () => {
+  console.log(`HTTP server started on http://localhost:${HTTP_PORT}`);
+});
+
+const wss = new WebSocketServer({ port: WS_PORT });
 const clients: WebSocket[] = [];
 
 wss.on('connection', (ws: WebSocket) => {
@@ -28,12 +35,5 @@ wss.on('connection', (ws: WebSocket) => {
   });
 });
 
-export const wsServer = {
-  attachTo(server: http.Server) {
-    server.on('upgrade', (request, socket, head) => {
-      wss.handleUpgrade(request, socket, head, (ws) => {
-        wss.emit('connection', ws, request);
-      });
-    });
-  }
-};
+console.log(`WebSocket server is running on ws://localhost:${WS_PORT}`);
+
