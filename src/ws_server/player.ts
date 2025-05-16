@@ -43,6 +43,18 @@ class Player {
     };
   };
 
+  incrementWins(name: string) {
+    const player = this.players.get(name);
+    if (player) {
+      player.wins += 1;
+      this.players.set(name, player);
+    }
+  }
+
+  getPlayer(name: string): IPlayer | undefined {
+    return this.players.get(name);
+  }
+
   getWinners() {
     const winnersList = [];
 
@@ -52,6 +64,12 @@ class Player {
         wins: player.wins,
       });
     }
+    winnersList.sort((a,b) => {
+      if (b.wins !== a.wins) {
+        return b.wins - a.wins;
+      }
+      return a.name.localeCompare(b.name);
+    });
     return winnersList;
   }
 };

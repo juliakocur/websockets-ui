@@ -1,6 +1,7 @@
 import { WebSocket } from 'ws';
 import { IRoom, IRoomPlayer, IShip } from '../types';
 import { GameManager } from './battle';
+import { player } from '../../ws_server/player';
 
 class RoomManager {
   private rooms: IRoom[] = [];
@@ -8,13 +9,20 @@ class RoomManager {
   private nextPlayerId = 1;
   private nextGameId = 1;
 
-  createRoom(ws: WebSocket): string | number {
+  createRoom(ws: WebSocket, playerName: string): string | number {
     const roomNum = this.nextRoomId++;
     const playerId = this.nextPlayerId++;
+    const registeredPlayer = player.getPlayer(playerName);
     const room: IRoom = {
       roomNum,
       players: [
-        { name: 'Player 1', index: playerId, ws, ships: [], password: '', wins: '' },
+        { name: registeredPlayer ? registeredPlayer.name : 'Player', 
+          index: playerId, 
+          ws, 
+          ships: [], 
+          password: '', 
+          wins: registeredPlayer ? registeredPlayer.wins : 0,
+        },
       ],
     };
     this.rooms.push(room);
@@ -22,7 +30,7 @@ class RoomManager {
     return roomNum;
   }
 
-  addUser(ws: WebSocket, roomId: string | number) {
+  addUser(ws: WebSocket, roomId: string | number, playerName: string) {
     const room = this.rooms.find(r => r.roomNum === roomId);
     if (!room) return 'Room not found';
     if (room.players.length === 2) return 'Room already full';
@@ -31,10 +39,11 @@ class RoomManager {
     if (userInRoom) return 'You are already in this room';
 
     const playerId = this.nextPlayerId++;
+    const registeredPlayer = player.getPlayer(playerName);
     const newPlayer: IRoomPlayer = {
-      name: 'Player 2',
+      name: registeredPlayer ? registeredPlayer.name : 'Player',
       password: '',
-      wins: 0,
+      wins: registeredPlayer ? registeredPlayer.wins : 0,
       index: playerId,
       ws,
       ships: [],
@@ -121,6 +130,16 @@ class RoomManager {
 
   getRoom(gameId: number): IRoom | undefined {
     return this.rooms.find(r => r.roomNum === gameId);
+  }
+
+  broadcastWinnerUpdate() {
+    const winners = player.getWinners();
+    const message = JSON.stringify({
+      type: 'update_winners',
+      data: JSON.stringify(winners),
+      id: 0,
+    });
+    this.broadcastToAll(message);
   }
 
   broadcastRoomsUpdate() {

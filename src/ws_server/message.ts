@@ -47,17 +47,20 @@ export const handleMessage = (ws: WebSocket, message: string) => {
       data: JSON.stringify(rooms),
       id,
     }));
+    (ws as any).playerName = name;
     return;
   }
 
   if (type === 'create_room') {
-    roomManager.createRoom(ws);
+    const playerName = (ws as any).playerName;
+    roomManager.createRoom(ws, playerName);
     return;
   }
 
   if (type === 'add_user_to_room') {
     const { indexRoom } = data;
-    const result = roomManager.addUser(ws, indexRoom);
+    const playerName = (ws as any).playerName;
+    const result = roomManager.addUser(ws, indexRoom, playerName);
     if (typeof result === 'string') {
       ws.send(JSON.stringify({
         type: 'error',
@@ -207,23 +210,17 @@ export const handleMessage = (ws: WebSocket, message: string) => {
         p.ws.send(JSON.stringify({
           type: 'finish',
           data: JSON.stringify({
-            winPlayer: indexPlayer
+            winPlayer: indexPlayer,
           }),
           id,
         }));
       });
+      const winner = room.players[indexPlayer];
+      player.incrementWins(winner.name);
+      roomManager.broadcastWinnerUpdate();
     }
-  
     return;
   }
-
-  // if (type === 'randomAttack') {
-  //   const { gameId, indexPlayer } = data;
-  //   const x = Math.floor(Math.random() * 10);
-  //   const y = Math.floor(Math.random() * 10);
-
-  //   return;
-  // }
 
   ws.send(JSON.stringify({
     type: 'error',
