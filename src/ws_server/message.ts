@@ -1,6 +1,7 @@
 import { WebSocket } from 'ws';
 import { player } from './player';
 import { roomManager } from '../model/room/room';
+import { IShip } from '../model/types';
 
 export const handleMessage = (ws: WebSocket, message: string) => {
   let parsed;
@@ -103,6 +104,127 @@ export const handleMessage = (ws: WebSocket, message: string) => {
     }));
     return;
   }
+
+  if (type === 'attack') {
+    const { gameId, x, y, indexPlayer } = data;
+    const room = roomManager.getRoom(gameId);
+    if (!room || !room.gameManager) return;
+  
+    const game = room.gameManager;
+  
+    if (indexPlayer !== game.getCurrentPlayerIndex()) {
+      ws.send(JSON.stringify({
+        type: 'error',
+        data: JSON.stringify({ errorText: 'Not your turn' }),
+        id,
+      }));
+      return;
+    }
+
+    if (indexPlayer === 1 - game.getCurrentPlayerIndex()) {
+      ws.send(JSON.stringify({
+        type: 'error',
+        data: JSON.stringify({ errorText: 'Attack yourself' }),
+        id,
+      }));
+      return;
+    }
+
+      
+    game.handleAttack(x, y);
+  
+    const result = game.getLastAttackResult();
+    const killedShip = game.getLastKilledShip();
+    const gameFinished = game.isGameFinished();
+    const currentPlayer = game.getCurrentPlayerIndex();
+
+    room.players.forEach(p => {
+      p.ws.send(JSON.stringify({
+        type: 'attack',
+        data: JSON.stringify({
+          position: { x, y },
+          currentPlayer: indexPlayer,
+          status: result,
+        }),
+        id,
+      }));
+    });
+  
+    function getCellsAroundShip(ship: IShip): { x: number; y: number }[] {
+      const set = new Set<string>();
+      for (const coord of ship.coords) {
+        for (let dx = -1; dx <= 1; dx++) {
+          for (let dy = -1; dy <= 1; dy++) {
+            const x = coord.x + dx;
+            const y = coord.y + dy;
+            if (x >= 0 && x < 10 && y >= 0 && y < 10) {
+              const key = `${x},${y}`;
+              if (!ship.coords.some(c => c.x === x && c.y === y)) {
+                set.add(key);
+              }
+            }
+          }
+        }
+      }
+      return Array.from(set).map(s => {
+        const [x, y] = s.split(',').map(Number);
+        return { x, y };
+      });
+    }
+  
+    if (result === 'killed' && killedShip) {
+      const around = getCellsAroundShip(killedShip);
+      for (const cell of around) {
+        room.players.forEach(p => {
+          p.ws.send(JSON.stringify({
+            type: 'attack',
+            data: JSON.stringify({
+              position: { x: cell.x, y: cell.y },
+              currentPlayer: indexPlayer,
+              status: 'miss',
+            }),
+            id,
+          }));
+        });
+      }
+    }
+
+    if (result === 'miss') {
+      room.players.forEach(p => {
+        p.ws.send(JSON.stringify({
+          type: 'turn',
+          data: JSON.stringify({
+            currentPlayer: game.getCurrentPlayerIndex(),
+          }),
+          id,
+        }));
+      });
+    }
+    
+  
+    if (gameFinished) {
+      room.players.forEach(p => {
+        p.ws.send(JSON.stringify({
+          type: 'finish',
+          data: JSON.stringify({
+            winPlayer: indexPlayer
+          }),
+          id,
+        }));
+      });
+    }
+  
+    return;
+  }
+
+  // if (type === 'randomAttack') {
+  //   const { gameId, indexPlayer } = data;
+  //   const x = Math.floor(Math.random() * 10);
+  //   const y = Math.floor(Math.random() * 10);
+
+  //   return;
+  // }
+
   ws.send(JSON.stringify({
     type: 'error',
     data: JSON.stringify({ errorText: `Unknown message type: ${type}` }),

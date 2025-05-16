@@ -1,5 +1,6 @@
 import { WebSocket } from 'ws';
 import { IRoom, IRoomPlayer, IShip } from '../types';
+import { GameManager } from './battle';
 
 class RoomManager {
   private rooms: IRoom[] = [];
@@ -13,7 +14,7 @@ class RoomManager {
     const room: IRoom = {
       roomNum,
       players: [
-        { name: 'Player 1', index: playerId, ws, ships: [] },
+        { name: 'Player 1', index: playerId, ws, ships: [], password: '', wins: '' },
       ],
     };
     this.rooms.push(room);
@@ -48,23 +49,41 @@ class RoomManager {
   }
 
   addShips(gameId: number, ships: IShip[], playerIndex: number): string | void {
+    const generateCoords = (ship: IShip): { x: number; y: number }[] => {
+      const coords = [];
+      for (let i = 0; i < ship.length; i++) {
+        coords.push({
+          x: ship.position.x + (ship.direction ? 0 : i),
+          y: ship.position.y + (ship.direction ? i : 0),
+        });
+      }
+      return coords;
+    };
+
     const room = this.rooms.find((r) => r.roomNum === gameId);
     if (!room) return 'Room not found';
 
     if (playerIndex < 0 || playerIndex >= room.players.length) {
       return 'Invalid player index';
     }
+
+    const processedShips = ships.map((ship) => ({
+      ...ship,
+      coords: generateCoords(ship),
+      hits: 0,
+    }));
   
-    room.players[playerIndex].ships = ships;
+    room.players[playerIndex].ships = processedShips;
   
-    const allReady = room.players.every((p) => p.ships.length > 0);
+    const allReady = room.players.every((p) => p.ships && p.ships.length > 0);
     if (allReady) {
       this.startGame(room);
     }
   }
 
   startGame(room: IRoom) {
-    const currentPlayerIndex = room.players[0].index;
+    const currentPlayerIndex = 0;
+    room.gameManager = new GameManager(room.players, currentPlayerIndex);
     room.players.forEach((player) => {
       player.ws.send(JSON.stringify({
         type: 'start_game',
@@ -75,16 +94,8 @@ class RoomManager {
         id: 0,
       }));
     });
-  
-    room.players.forEach((player) => {
-      player.ws.send(JSON.stringify({
-        type: 'turn',
-        data: JSON.stringify({
-          currentPlayer: currentPlayerIndex,
-        }),
-        id: 0,
-      }));
-    });
+
+    this.sendTurn(room, currentPlayerIndex);
   }
 
   sendTurn(room: IRoom, currentPlayerIndex: number) {
@@ -108,6 +119,10 @@ class RoomManager {
       }));
   }
 
+  getRoom(gameId: number): IRoom | undefined {
+    return this.rooms.find(r => r.roomNum === gameId);
+  }
+
   broadcastRoomsUpdate() {
     const simplifiedRooms = this.rooms.map(room => ({
       roomId: room.roomNum,
@@ -128,6 +143,6 @@ class RoomManager {
       });
     });
   }
-}
+};
 
 export const roomManager = new RoomManager();

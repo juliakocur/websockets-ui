@@ -1,4 +1,5 @@
 import { WebSocket } from 'ws';
+import { GameManager } from './room/battle';
 
 export interface IPlayer {
   name: string;
@@ -11,7 +12,7 @@ export interface IPlayer {
 export interface IRoomPlayer {
   name: string;
   password: string;
-  wins: number;
+  wins: number | string;
   index: number;
   ws: WebSocket;
   ships: IShip[];
@@ -19,7 +20,8 @@ export interface IRoomPlayer {
 
 export interface IRoom {
   roomNum: string | number;
-  players: { name: string; index: string | number; ws: WebSocket;  ships: IShip[]; }[];
+  players: IRoomPlayer[];
+  gameManager?: GameManager;
 }
 
 export interface IShip {
@@ -30,4 +32,13 @@ export interface IShip {
   direction: boolean;
   length: number;
   type: 'small' | 'medium' | 'large' | 'huge';
+  coords: { x: number; y: number }[];
+  hits: number;
+}
+
+export interface IAttackResult {
+  result: 'miss' | 'shot' | 'killed';
+  currentPlayerIndex: number;
+  gameFinished: boolean;
+  killedShip: IShip | null;
 }

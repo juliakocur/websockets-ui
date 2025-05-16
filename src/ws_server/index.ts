@@ -2,8 +2,8 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { handleMessage } from './message';
 import { httpServer } from "../http_server/index";
 
-export const HTTP_PORT = 8181;
-export const WS_PORT = 3000;
+const HTTP_PORT = 8181;
+const WS_PORT = 3000;
 
 httpServer.listen(HTTP_PORT, () => {
   console.log(`HTTP server started on http://localhost:${HTTP_PORT}`);
@@ -36,4 +36,3 @@ wss.on('connection', (ws: WebSocket) => {
 });
 
 console.log(`WebSocket server is running on ws://localhost:${WS_PORT}`);
-
