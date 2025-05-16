@@ -1,4 +1,4 @@
-import { IRoomPlayer, IShip, IAttackResult } from '../types';
+import { IRoomPlayer, IShip } from '../types';
 
 export class GameManager {
   private currentPlayerIndex: number;
